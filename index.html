@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Automated Mobile Utility Tool</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            max-height: 100vh; /* Strictly limits screen window boundaries */
+            margin: 0;
+            padding: 8px;
+            background-color: #f5f5f7;
+            overflow: hidden; /* Disables all body layout scrolling completely */
+        }
+        .container {
+            background: white;
+            padding: 14px 16px;
+            border-radius: 14px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            width: 100%;
+            max-width: 380px;
+            margin: auto;
+        }
+        h3 { margin-top: 0; text-align: center; color: #1d1d1f; margin-bottom: 10px; font-size: 15px; }
+        
+        .tabs {
+            display: flex;
+            margin-bottom: 10px;
+            background: #eee;
+            border-radius: 6px;
+            padding: 2px;
+        }
+        .tab {
+            flex: 1;
+            padding: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+            background: none;
+            border-radius: 5px;
+            color: #666;
+        }
+        .tab.active {
+            background: white;
+            color: #007aff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .preview-box {
+            width: 100%;
+            padding: 10px;
+            font-size: 15px;
+            font-family: monospace;
+            text-align: center;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            background-color: #fafafa;
+        }
+        .button-row {
+            display: flex;
+            gap: 6px;
+            margin-bottom: 12px;
+        }
+        .action-btn {
+            flex: 1;
+            padding: 10px;
+            font-size: 13px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .action-btn:active { opacity: 0.8; }
+        .btn-generate { background-color: #007aff; color: white; }
+        .btn-copy { background-color: #34c759; color: white; }
+
+        hr { border: 0; height: 1px; background: #e5e5ea; margin: 12px 0; }
+
+        /* Compact Grid Layout for the Form Fields */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px 8px;
+            margin-bottom: 12px;
+        }
+        .form-group { margin-bottom: 0; }
+        label { display: block; margin-bottom: 3px; font-weight: bold; color: #444; font-size: 11px; }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: #fff;
+            font-family: inherit;
+        }
+        textarea { resize: none; height: 38px; } /* Prevents textarea from expanding scale */
+
+        .btn-send {
+            width: 100%;
+            padding: 12px;
+            background-color: #ff9500;
+            color: white;
+            font-size: 15px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .btn-send:hover { background-color: #e08200; }
+        
+        .status {
+            font-size: 13px;
+            color: #666;
+            text-align: center;
+            min-height: 16px;
+            margin-top: 8px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h3>Dynamic Generator</h3>
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab(&#39;password&#39;)">Password</button>
+        <button class="tab" onclick="switchTab(&#39;name&#39;)">African Name</button>
+    </div>
+
+    <input type="text" id="displayField" readonly="" placeholder="Your password will appear here" class="preview-box">
+
+    <div class="button-row">
+        <button class="action-btn btn-generate" onclick="handleGenerate()">1-Click Generate</button>
+        <button class="action-btn btn-copy" onclick="handleCopy()">Copy Output</button>
+    </div>
+    
+    <hr>
+
+    <h3>Google Sheet Submission</h3>
+    <form id="sheetForm">
+        <div class="form-grid">
+            <div class="form-group">
+                <label for="field1">Input Field 1:</label>
+                <input type="text" id="field1" placeholder="Value 1" required="">
+            </div>
+            
+            <div class="form-group">
+                <label for="field2">Input Field 2 (Auto):</label>
+                <input type="text" id="field2" placeholder="Auto-fills" required="">
+            </div>
+            
+            <div class="form-group">
+                <label for="field3">Input Field 3:</label>
+                <textarea id="field3" placeholder="Value 3" required=""></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="field4">Input Field 4:</label>
+                <input type="text" id="field4" placeholder="Value 4" required="">
+            </div>
+        </div>
+        
+        <button type="submit" class="btn-send">Send Data to Sheet</button>
+    </form>
+    
+    <div class="status" id="statusText"></div>
+</div>
+
+<script>
+// Updated Executable Link
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby9VbgDMcLUiaiMHIsgr5umW41V0bABfxn1U9IzSqnyMXui1Pm9IDp-ToGS6wGUwWx__A/exec"; 
+
+let currentMode = 'password';
+const generatedHistory = new Set();
+
+const namePrefixes = ["Kofi", "Abe", "Chiu", "Olu", "Baba", "Ayo", "Zola", "Madi", "Tafa", "Kama", "Tari", "Amara", "Bisi", "Femi", "Sona", "Leke", "Zara", "Gosi", "Nika", "Dara"];
+const nameSuffixes = ["ni", "si", "ma", "ba", "ka", "tu", "da", "fe", "la", "we", "ko", "sa", "bo", "na", "wo", "go", "ze", "mu", "re", "lo"];
+
+function switchTab(mode) {
+    currentMode = mode;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    
+    if (mode === 'password') {
+        document.getElementsByClassName('tab')[0].classList.add('active');
+        document.getElementById('displayField').placeholder = "Your password will appear here";
+    } else {
+        document.getElementsByClassName('tab')[1].classList.add('active');
+        document.getElementById('displayField').placeholder = "Your name will appear here";
+    }
+    document.getElementById('displayField').value = "";
+    showStatus("", "");
+}
+
+function generateBillionUniqueNames() {
+    let attempts = 0;
+    const saltChars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    
+    while (attempts < 1500) {
+        let pre = namePrefixes[Math.floor(Math.random() * namePrefixes.length)];
+        let suf = nameSuffixes[Math.floor(Math.random() * nameSuffixes.length)];
+        
+        let firstName = pre + suf;
+        firstName = firstName.charAt(0).toUpperCase() + firstName.slice(1).toLowerCase();
+
+        if (generatedHistory.has(firstName) || generatedHistory.size > 3000) {
+            firstName += saltChars.charAt(Math.floor(Math.random() * saltChars.length));
+        }
+
+        if (!generatedHistory.has(firstName)) {
+            generatedHistory.add(firstName);
+            return firstName;
+        }
+        attempts++;
+    }
+    return "Aman" + Math.floor(Math.random() * 99);
+}
+
+function handleGenerate() {
+    let finalOutput = "";
+
+    if (currentMode === 'password') {
+        const targetLength = Math.floor(Math.random() * (10 - 6 + 1)) + 6;
+        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        
+        for (let i = 0; i < targetLength; i++) {
+            finalOutput += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        
+        document.getElementById("displayField").value = finalOutput; 
+        document.getElementById("field2").value = finalOutput;       
+        showStatus("Password generated & auto-filled!", "blue");
+    } else {
+        finalOutput = generateBillionUniqueNames();
+        
+        document.getElementById("displayField").value = finalOutput; 
+        showStatus("Short unique name generated!", "blue");
+    }
+}
+
+// --- SUBMISSION TO GOOGLE SHEETS ---
+document.getElementById('sheetForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    showStatus("Sending data to Google Sheet...", "orange");
+
+    // Standard URL query parameter packing for reliable tracking
+    const urlEncodedData = new URLSearchParams();
+    urlEncodedData.append('field1', document.getElementById('field1').value);
+    urlEncodedData.append('field2', document.getElementById('field2').value);
+    urlEncodedData.append('field3', document.getElementById('field3').value);
+    urlEncodedData.append('field4', document.getElementById('field4').value);
+
+    fetch(WEB_APP_URL, {
+        method: 'POST',
+        mode: 'no-cors', 
+        cache: 'no-cache',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: urlEncodedData.toString()
+    })
+    .then(response => {
+        showStatus("Data logged successfully into Sheet!", "green");
+        document.getElementById('sheetForm').reset();
+    })
+    .catch(error => {
+        showStatus("Submission failed. Check your Web App URL link.", "red");
+        console.error('Error:', error);
+    });
+});
+
+function handleCopy() {
+    const field = document.getElementById("displayField");
+    if (!field.value) {
+        showStatus("Generate something first!", "red");
+        return;
+    }
+    field.select();
+    field.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(field.value);
+    showStatus("Copied to clipboard!", "green");
+}
+
+function showStatus(text, color) {
+    const statusDiv = document.getElementById("statusText");
+    statusDiv.innerText = text;
+    statusDiv.style.color = color;
+}
+</script>
+
+</body></html>
